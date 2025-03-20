@@ -68,6 +68,9 @@ export default function Account({ session }: { session: Session }) {
       if (error) {
         throw error;
       }
+
+      // Auto logout after profile update
+      await supabase.auth.signOut();
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert(error.message);
