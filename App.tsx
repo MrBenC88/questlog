@@ -3,13 +3,33 @@ import { supabase } from "./lib/supabase";
 import Auth from "./components/Auth";
 import Account from "./components/Account";
 import Quest from "./components/Quest";
+import CreateQuest from "./components/CreateQuest";
 import { Session } from "@supabase/supabase-js";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
 import { Icon } from "@rneui/themed";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function QuestStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="QuestList"
+        component={Quest}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CreateQuest"
+        component={CreateQuest}
+        options={{ title: "New Quest" }}
+      />
+    </Stack.Navigator>
+  );
+}
 
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -48,7 +68,7 @@ export default function App() {
         <Tab.Navigator screenOptions={{ headerShown: false }}>
           <Tab.Screen
             name="Quest"
-            component={Quest}
+            component={QuestStack}
             options={{
               tabBarIcon: ({ color, size }) => (
                 <Icon
