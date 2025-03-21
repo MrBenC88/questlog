@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
@@ -15,6 +14,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { Button, Icon, LinearProgress } from "@rneui/themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { questDetailStyles as styles } from "../constants";
 
 export default function QuestDetails() {
   const route = useRoute();
@@ -148,6 +148,10 @@ export default function QuestDetails() {
     setProgress(taskList.length > 0 ? completed / taskList.length : 0);
   }
 
+  function getXpThreshold(level: number) {
+    return Math.ceil(level * 10 * 1.2);
+  }
+
   async function updateQuestStreakIfNeeded() {
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase
@@ -181,8 +185,13 @@ export default function QuestDetails() {
     const xpGain = 50;
     let xp = data.mastery_xp + xpGain;
     let lvl = data.mastery_lvl;
-    const threshold = lvl * 100;
-    if (xp >= threshold) lvl += 1;
+    let threshold = getXpThreshold(lvl);
+
+    while (xp >= threshold) {
+      xp -= threshold;
+      lvl += 1;
+      threshold = getXpThreshold(lvl);
+    }
 
     const nextDue = getNextDueDate(today, data.frequency);
 
@@ -219,6 +228,8 @@ export default function QuestDetails() {
     }
   }
 
+  const masteryProgress = questMastery.xp / getXpThreshold(questMastery.level);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{quest.name}</Text>
@@ -247,8 +258,15 @@ export default function QuestDetails() {
       </Text>
 
       <Text style={styles.mastery}>
-        🏆 Mastery Level: {questMastery.level} | XP: {questMastery.xp}
+        🏆 Mastery Level: {questMastery.level} | XP: {questMastery.xp} /{" "}
+        {getXpThreshold(questMastery.level)}
       </Text>
+
+      <LinearProgress
+        value={masteryProgress}
+        color="#FFC107"
+        style={{ height: 6, borderRadius: 10, marginBottom: 16 }}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" />
@@ -279,7 +297,6 @@ export default function QuestDetails() {
   );
 }
 
-// ✅ Task Item Component with Clickable Checkmark
 function TaskItem({ task, toggleTaskCompletion }) {
   return (
     <TouchableOpacity
@@ -303,105 +320,3 @@ function TaskItem({ task, toggleTaskCompletion }) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#121212",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#F8F8F8",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#A0A0A0",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  timerText: {
-    fontSize: 14,
-    color: "#BBB",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  timer: {
-    color: "#FF5555",
-    fontWeight: "bold",
-  },
-  progressBar: {
-    height: 8,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  taskItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  completedTask: {
-    backgroundColor: "#2A2A2A",
-  },
-  taskIcon: {
-    marginRight: 10,
-  },
-  taskText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  completedTaskText: {
-    textDecorationLine: "line-through",
-    color: "#888",
-  },
-  emptyText: {
-    color: "#888",
-    textAlign: "center",
-    marginTop: 20,
-  },
-  addButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  backButton: {
-    backgroundColor: "#555",
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  streak: {
-    fontSize: 16,
-    color: "#FFD700",
-    textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  mastery: {
-    fontSize: 16,
-    color: "#FFD700",
-    textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  failure: {
-    fontSize: 14,
-    color: "#FF5555",
-    textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  dueDate: {
-    fontSize: 14,
-    color: "#FFD700",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-});

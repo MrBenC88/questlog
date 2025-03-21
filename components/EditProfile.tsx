@@ -4,7 +4,7 @@ import { StyleSheet, View, Alert } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 
-export default function Account({ session }: { session: Session }) {
+export default function EditProfile({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [website, setWebsite] = useState("");
@@ -17,15 +17,13 @@ export default function Account({ session }: { session: Session }) {
   async function getProfile() {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error("No user on the session!");
-
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select(`username, website, avatar_url`)
-        .eq("id", session?.user.id)
+        .select("username, website, avatar_url")
+        .eq("id", session.user.id)
         .single();
 
-      if (error && status !== 406) throw error;
+      if (error) throw error;
       if (data) {
         setUsername(data.username);
         setWebsite(data.website);
@@ -49,20 +47,15 @@ export default function Account({ session }: { session: Session }) {
   }) {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error("No user on the session!");
-
       const updates = {
-        id: session?.user.id,
+        id: session.user.id,
         username,
         website,
         avatar_url,
         updated_at: new Date(),
       };
-
       const { error } = await supabase.from("profiles").upsert(updates);
       if (error) throw error;
-
-      await supabase.auth.signOut();
     } catch (error) {
       if (error instanceof Error) Alert.alert(error.message);
     } finally {
@@ -72,12 +65,12 @@ export default function Account({ session }: { session: Session }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>⚔️ Your Profile</Text>
-      <Text style={styles.sub}>Edit your stats before battle.</Text>
+      <Text style={styles.header}>⚔️ Update User</Text>
+      <Text style={styles.sub}>Modify user details.</Text>
 
       <Input
         label="Email"
-        value={session?.user?.email}
+        value={session.user.email}
         disabled
         inputStyle={styles.inputText}
         labelStyle={styles.label}
@@ -85,33 +78,27 @@ export default function Account({ session }: { session: Session }) {
 
       <Input
         label="Username"
-        value={username || ""}
-        onChangeText={(text) => setUsername(text)}
+        value={username}
+        onChangeText={setUsername}
         inputStyle={styles.inputText}
         labelStyle={styles.label}
       />
 
       <Input
         label="Website"
-        value={website || ""}
-        onChangeText={(text) => setWebsite(text)}
+        value={website}
+        onChangeText={setWebsite}
         inputStyle={styles.inputText}
         labelStyle={styles.label}
       />
 
       <Button
-        title={loading ? "Loading ..." : "Update"}
+        title={loading ? "Loading..." : "Save Changes"}
         onPress={() =>
           updateProfile({ username, website, avatar_url: avatarUrl })
         }
         disabled={loading}
-        buttonStyle={styles.updateButton}
-      />
-
-      <Button
-        title="Sign Out"
-        onPress={() => supabase.auth.signOut()}
-        buttonStyle={styles.signOutButton}
+        buttonStyle={styles.saveButton}
       />
     </View>
   );
@@ -147,14 +134,9 @@ const styles = StyleSheet.create({
     color: "#F5F5F5",
     fontSize: 16,
   },
-  updateButton: {
+  saveButton: {
     backgroundColor: "#4CAF50",
     marginTop: 20,
-    borderRadius: 10,
-  },
-  signOutButton: {
-    backgroundColor: "#444",
-    marginTop: 12,
     borderRadius: 10,
   },
 });
