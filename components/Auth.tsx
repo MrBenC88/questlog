@@ -41,7 +41,7 @@ export default function Auth() {
 
     if (error) Alert.alert(error.message);
     if (!session)
-      Alert.alert("Please check your inbox for email verification!");
+      Alert.alert("Account created successfully! You can now log in.");
     setLoading(false);
   }
 
