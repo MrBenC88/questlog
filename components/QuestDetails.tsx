@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import {
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import { Button, Icon, LinearProgress } from "@rneui/themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { questDetailStyles as styles } from "../constants";
+import { useNavigation } from "../stores/useNavigation";
 
-export default function QuestDetails() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { quest } = route.params as { quest: any };
+export default function QuestDetails({ quest }: { quest: any }) {
+  const { goToSubscreen, goBack } = useNavigation();
   const [tasks, setTasks] = useState([]);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -32,11 +26,9 @@ export default function QuestDetails() {
     frequency: quest.frequency,
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      loadTasks();
-    }, [])
-  );
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
   function getSecondsUntilMidnight() {
     const now = new Date();
@@ -275,13 +267,9 @@ export default function QuestDetails() {
       <Button
         title="Add Task"
         buttonStyle={styles.addButton}
-        onPress={() => navigation.navigate("CreateTask", { questId: quest.id })}
+        onPress={() => goToSubscreen("CreateTask", quest.id)}
       />
-      <Button
-        title="Back"
-        buttonStyle={styles.backButton}
-        onPress={() => navigation.goBack()}
-      />
+      <Button title="Back" buttonStyle={styles.backButton} onPress={goBack} />
     </View>
   );
 }

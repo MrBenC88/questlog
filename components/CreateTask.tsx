@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
 import { Button } from "@rneui/themed";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "../stores/useNavigation";
 import { supabase } from "../lib/supabase";
 
-export default function CreateTask() {
+export default function CreateTask({ questId }: { questId: string }) {
+  const { goBack } = useNavigation();
   const [taskName, setTaskName] = useState("");
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { questId } = route.params as { questId: string };
 
   async function addTask() {
     if (!taskName.trim()) {
@@ -33,7 +31,7 @@ export default function CreateTask() {
     if (error) {
       Alert.alert("Error", error.message);
     } else {
-      navigation.goBack(); // Return to QuestDetails page
+      goBack(); // Return to QuestDetails page
     }
   }
 

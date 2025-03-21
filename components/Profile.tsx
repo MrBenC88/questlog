@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Button, LinearProgress } from "@rneui/themed";
 import { supabase } from "../lib/supabase";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "../stores/useNavigation";
 
 export default function Profile({ session }) {
   const [profile, setProfile] = useState<any>(null);
-  const navigation = useNavigation();
+  const { goToSubscreen } = useNavigation();
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-    }, [])
-  );
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   async function fetchProfile() {
     const { data, error } = await supabase
@@ -96,7 +94,7 @@ export default function Profile({ session }) {
       {/* 📜 Edit Profile Button */}
       <Button
         title="Edit Profile"
-        onPress={() => navigation.navigate("EditProfile")}
+        onPress={() => goToSubscreen("EditProfile")}
         buttonStyle={styles.editButton}
       />
 

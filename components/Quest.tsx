@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,19 +8,17 @@ import {
   Animated,
 } from "react-native";
 import { Icon, Button, LinearProgress } from "@rneui/themed";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "../stores/useNavigation";
 import { supabase } from "../lib/supabase";
 import { questStyles as styles } from "../constants";
 
 export default function Quest() {
   const [quests, setQuests] = useState<any[]>([]);
-  const navigation = useNavigation();
+  const { goToSubscreen } = useNavigation();
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchQuests();
-    }, [])
-  );
+  useEffect(() => {
+    fetchQuests();
+  }, []);
 
   async function fetchQuests() {
     const {
@@ -78,7 +76,7 @@ export default function Quest() {
         data={quests}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <QuestItem item={item} navigation={navigation} />
+          <QuestItem item={item} goToSubscreen={goToSubscreen} />
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No quests yet. Add one!</Text>
@@ -89,13 +87,13 @@ export default function Quest() {
         icon={<Icon name="plus" type="font-awesome" color="white" />}
         title="  Add Quest"
         buttonStyle={styles.addButton}
-        onPress={() => navigation.navigate("CreateQuest")}
+        onPress={() => goToSubscreen("CreateQuest")}
       />
     </View>
   );
 }
 
-function QuestItem({ item, navigation }) {
+function QuestItem({ item, goToSubscreen }) {
   const glowAnim = useState(new Animated.Value(1))[0];
   const progress = Math.min(item.progress || 0, 1); // fallback to 0 if missing
 
@@ -113,7 +111,7 @@ function QuestItem({ item, navigation }) {
       duration: 120,
       useNativeDriver: true,
     }).start(() => {
-      navigation.navigate("QuestDetails", { quest: item });
+      goToSubscreen("QuestDetails", item);
     });
   };
 

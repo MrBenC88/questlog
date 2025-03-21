@@ -8,15 +8,15 @@ import {
   Animated,
 } from "react-native";
 import { Button } from "@rneui/themed";
-import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import { useNavigation } from "../stores/useNavigation";
 
 export default function CreateQuest() {
+  const { goBack } = useNavigation();
   const [questName, setQuestName] = useState("");
   const [frequency, setFrequency] = useState("Daily"); // Default frequency
   const [loading, setLoading] = useState(false);
   const [borderAnim] = useState(new Animated.Value(0)); // Animated glowing border
-  const navigation = useNavigation();
 
   async function addQuest() {
     if (!questName.trim()) {
@@ -46,7 +46,7 @@ export default function CreateQuest() {
     } else {
       setQuestName("");
       setLoading(false);
-      navigation.goBack();
+      goBack();
     }
   }
 

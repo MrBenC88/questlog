@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,18 +11,15 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { Button, Icon } from "@rneui/themed";
-import { useFocusEffect } from "@react-navigation/native";
 
 export default function Explore() {
   const [presets, setPresets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({}); // Tracks which presets are expanded
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPresets();
-    }, [])
-  );
+  useEffect(() => {
+    fetchPresets();
+  }, []);
 
   async function fetchPresets() {
     setLoading(true);
