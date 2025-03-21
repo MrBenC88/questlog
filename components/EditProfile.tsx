@@ -63,6 +63,48 @@ export default function EditProfile({ session }: { session: Session }) {
     }
   }
 
+  async function deleteAccount() {
+    Alert.alert(
+      "Are you sure?",
+      "This will permanently delete your account and all your data.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              const userId = session.user.id;
+
+              // Step 1: Delete tasks
+              await supabase.from("tasks").delete().eq("user_id", userId);
+
+              // Step 2: Delete quests
+              await supabase.from("quests").delete().eq("user_id", userId);
+
+              // Step 3: Delete profile
+              await supabase.from("profiles").delete().eq("id", userId);
+
+              // Step 4: Delete the user from auth (admin only)
+              const { error: deleteUserError } =
+                await supabase.auth.admin.deleteUser(userId);
+              if (deleteUserError) throw deleteUserError;
+
+              // Step 5: Sign out
+              await supabase.auth.signOut();
+            } catch (err: any) {
+              Alert.alert("Failed to delete account", err.message);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>⚔️ Update User</Text>
@@ -100,6 +142,13 @@ export default function EditProfile({ session }: { session: Session }) {
         disabled={loading}
         buttonStyle={styles.saveButton}
       />
+      {/* 
+      <Button
+        title="Delete Account"
+        onPress={deleteAccount}
+        buttonStyle={styles.deleteButton}
+        disabled={loading}
+      /> */}
     </View>
   );
 }
@@ -137,6 +186,11 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: "#4CAF50",
     marginTop: 20,
+    borderRadius: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#D32F2F",
+    marginTop: 14,
     borderRadius: 10,
   },
 });
