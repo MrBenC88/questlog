@@ -16,9 +16,19 @@ export default function CreateTask() {
       return;
     }
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      Alert.alert("Error", "Unable to get current user.");
+      return;
+    }
+
     const { error } = await supabase
       .from("tasks")
-      .insert([{ name: taskName, quest_id: questId }]);
+      .insert([{ name: taskName, quest_id: questId, user_id: user.id }]); // ✅ Add user_id
 
     if (error) {
       Alert.alert("Error", error.message);

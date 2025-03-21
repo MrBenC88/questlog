@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Button, LinearProgress } from "@rneui/themed";
 import { supabase } from "../lib/supabase";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 export default function Profile({ session }) {
   const [profile, setProfile] = useState<any>(null);
   const navigation = useNavigation();
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [])
+  );
 
   async function fetchProfile() {
     const { data, error } = await supabase
@@ -55,7 +57,7 @@ export default function Profile({ session }) {
   return (
     <View style={styles.container}>
       {/* 🔥 Username Display */}
-      <Text style={styles.header}>{profile.username || "Shadow Monarch"}</Text>
+      <Text style={styles.header}>{profile.username || "Challenger"}</Text>
 
       {/* 🔥 Level Display */}
       <View style={styles.levelContainer}>

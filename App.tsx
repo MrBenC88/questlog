@@ -7,6 +7,7 @@ import CreateQuest from "./components/CreateQuest";
 import CreateTask from "./components/CreateTask";
 import Profile from "./components/Profile";
 import EditProfile from "./components/EditProfile";
+import Explore from "./components/Explore";
 import { Session } from "@supabase/supabase-js";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -132,6 +133,20 @@ export default function App() {
               tabBarIcon: ({ color, size }) => (
                 <Icon
                   name="book"
+                  type="font-awesome"
+                  color={color}
+                  size={size}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Explore"
+            component={Explore}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Icon
+                  name="compass"
                   type="font-awesome"
                   color={color}
                   size={size}

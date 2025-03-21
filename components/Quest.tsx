@@ -23,9 +23,19 @@ export default function Quest() {
   );
 
   async function fetchQuests() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(); // ✅ get current user
+
+    if (!user) {
+      console.warn("No user session found");
+      return;
+    }
+
     const { data: questsData, error: questsError } = await supabase
       .from("quests")
       .select("id, name, streak, mastery_lvl, mastery_xp, created_at")
+      .eq("user_id", user.id) // ✅ filter by user_id
       .order("created_at", { ascending: false });
 
     if (questsError) {

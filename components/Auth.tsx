@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, View, AppState } from "react-native";
+import { Alert, StyleSheet, View, ActivityIndicator } from "react-native";
 import { supabase } from "../lib/supabase";
-import { Button, Input } from "@rneui/themed";
+import { Button, Input, Text } from "@rneui/themed";
 
-// Tells Supabase Auth to continuously refresh the session automatically if
-// the app is in the foreground. When this is added, you will continue to receive
-// `onAuthStateChange` events with the `TOKEN_REFRESHED` or `SIGNED_OUT` event
-// if the user's session is terminated. This should only be registered once.
+// Automatically refresh session while app is active
+import { AppState } from "react-native";
 AppState.addEventListener("change", (state) => {
   if (state === "active") {
     supabase.auth.startAutoRefresh();
@@ -23,8 +21,8 @@ export default function Auth() {
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      email,
+      password,
     });
 
     if (error) Alert.alert(error.message);
@@ -37,8 +35,8 @@ export default function Auth() {
       data: { session },
       error,
     } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email,
+      password,
     });
 
     if (error) Alert.alert(error.message);
@@ -49,56 +47,99 @@ export default function Auth() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Input
-          label="Email"
-          leftIcon={{ type: "font-awesome", name: "envelope" }}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          placeholder="email@address.com"
-          autoCapitalize={"none"}
-        />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Password"
-          leftIcon={{ type: "font-awesome", name: "lock" }}
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={true}
-          placeholder="Password"
-          autoCapitalize={"none"}
-        />
-      </View>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button
-          title="Sign in"
-          disabled={loading}
-          onPress={() => signInWithEmail()}
-        />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Button
-          title="Sign up"
-          disabled={loading}
-          onPress={() => signUpWithEmail()}
-        />
-      </View>
+      <Text style={styles.title}>Lock In</Text>
+      <Text style={styles.subtitle}>Sign in to level up your journey</Text>
+
+      {/* 📧 Email Input */}
+      <Input
+        placeholder="email@address.com"
+        placeholderTextColor="#AAA"
+        leftIcon={{ type: "font-awesome", name: "envelope", color: "#888" }}
+        onChangeText={(text) => setEmail(text)}
+        value={email}
+        autoCapitalize="none"
+        inputStyle={styles.inputText}
+        inputContainerStyle={styles.inputContainer}
+      />
+
+      {/* 🔒 Password Input */}
+      <Input
+        placeholder="Password"
+        placeholderTextColor="#AAA"
+        leftIcon={{ type: "font-awesome", name: "lock", color: "#888" }}
+        onChangeText={(text) => setPassword(text)}
+        value={password}
+        secureTextEntry={true}
+        autoCapitalize="none"
+        inputStyle={styles.inputText}
+        inputContainerStyle={styles.inputContainer}
+      />
+
+      {/* 🟢 Sign In Button */}
+      <Button
+        title={loading ? <ActivityIndicator color="white" /> : "Sign In"}
+        disabled={loading}
+        onPress={signInWithEmail}
+        buttonStyle={styles.signInButton}
+      />
+
+      {/* ✨ Sign Up Button */}
+      <Button
+        title="Sign Up"
+        disabled={loading}
+        onPress={signUpWithEmail}
+        buttonStyle={styles.signUpButton}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 40,
-    padding: 12,
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#0D0D0D",
+    alignItems: "center",
   },
-  verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    alignSelf: "stretch",
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#F8F8F8",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    textShadowColor: "#FFD700",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 5,
   },
-  mt20: {
+  subtitle: {
+    fontSize: 14,
+    color: "#AAAAAA",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  inputText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
+  inputContainer: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    borderBottomWidth: 0,
+    marginBottom: 12,
+  },
+  signInButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    width: "100%",
     marginTop: 20,
+  },
+  signUpButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 10,
+    width: "100%",
+    marginTop: 12,
   },
 });

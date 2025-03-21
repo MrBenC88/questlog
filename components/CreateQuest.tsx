@@ -26,16 +26,27 @@ export default function CreateQuest() {
 
     setLoading(true);
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      Alert.alert("Error", "Unable to get current user");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase
       .from("quests")
-      .insert([{ name: questName, frequency }]); // Save quest with frequency
+      .insert([{ name: questName, frequency, user_id: user.id }]); // ✅ Attach user_id
 
     if (error) {
       Alert.alert("Error", error.message);
     } else {
-      setQuestName(""); // Clear input
+      setQuestName("");
       setLoading(false);
-      navigation.goBack(); // Return to Quest list after adding
+      navigation.goBack();
     }
   }
 

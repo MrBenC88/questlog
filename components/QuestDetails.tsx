@@ -89,12 +89,17 @@ export default function QuestDetails() {
   }
 
   async function fetchTasks() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(); // ✅ Get current user
+
     const { data: questData, error: questError } = await supabase
       .from("quests")
       .select(
         "id, name, streak, mastery_lvl, mastery_xp, last_completed_at, failed_at, due_date, frequency"
       )
       .eq("id", quest.id)
+      .eq("user_id", user.id) // ✅ Only fetch the current user's quest
       .single();
 
     if (questError) {
@@ -106,6 +111,7 @@ export default function QuestDetails() {
       .from("tasks")
       .select("*")
       .eq("quest_id", quest.id)
+      .eq("user_id", user.id) // ✅ Only fetch tasks for this user
       .order("created_at", { ascending: false });
 
     if (!taskError) {
