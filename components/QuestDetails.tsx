@@ -242,8 +242,7 @@ export default function QuestDetails() {
       <Text style={styles.subtitle}>Task List ({questMeta.frequency})</Text>
 
       <Text style={styles.timerText}>
-        ⏳ Time left today:{" "}
-        <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
+        ⏳ Time left: <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
       </Text>
 
       <LinearProgress
@@ -252,27 +251,11 @@ export default function QuestDetails() {
         style={styles.progressBar}
       />
 
-      <Text style={styles.failure}>
-        {questMeta.failed_at ? `❌ Last Failed: ${questMeta.failed_at}` : ""}
-      </Text>
-      <Text style={styles.dueDate}>
-        📅 Next Due: {questMeta.due_date || "Not Set"}
-      </Text>
-
       <Text style={styles.streak}>
-        🔥 Streak: {questMeta.streak} day{questMeta.streak === 1 ? "" : "s"}
-      </Text>
-
-      <Text style={styles.mastery}>
-        🏆 Mastery Level: {questMastery.level} | XP: {questMastery.xp} /{" "}
+        Streak: {questMeta.streak} day{questMeta.streak === 1 ? "" : "s"} |
+        Mastery Level: {questMastery.level} | XP: {questMastery.xp} /{" "}
         {getXpThreshold(questMastery.level)}
       </Text>
-
-      <LinearProgress
-        value={masteryProgress}
-        color="#FFC107"
-        style={{ height: 6, borderRadius: 10, marginBottom: 16 }}
-      />
 
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" />

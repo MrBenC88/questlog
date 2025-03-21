@@ -4,74 +4,53 @@ export const questDetailStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#121212",
+    backgroundColor: "#0B0B0B",
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#F8F8F8",
-    marginBottom: 10,
+    color: "#9EFFA9",
+    textAlign: "center",
     textTransform: "uppercase",
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
+    marginBottom: 10,
+    textShadowColor: "#9EFFA9",
+    textShadowRadius: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#A0A0A0",
-    marginBottom: 10,
     textAlign: "center",
+    marginBottom: 10,
   },
   timerText: {
     fontSize: 14,
-    color: "#BBB",
+    color: "#BBBBBB",
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   timer: {
-    color: "#FF5555",
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#FF5555",
+    textShadowColor: "#FF5555",
+    textShadowRadius: 5,
   },
   progressBar: {
-    height: 8,
-    borderRadius: 10,
-    marginBottom: 20,
+    height: 10,
+    borderRadius: 12,
+    marginVertical: 12,
+    backgroundColor: "#222",
   },
-  taskItem: {
+  infoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    padding: 15,
-    borderRadius: 10,
+    justifyContent: "space-between",
     marginBottom: 10,
   },
-  completedTask: {
-    backgroundColor: "#2A2A2A",
-  },
-  taskIcon: {
-    marginRight: 10,
-  },
-  taskText: {
-    fontSize: 18,
+  infoText: {
+    fontSize: 14,
+    color: "#FFD700",
     fontWeight: "bold",
-    color: "#fff",
-  },
-  completedTaskText: {
-    textDecorationLine: "line-through",
-    color: "#888",
-  },
-  emptyText: {
-    color: "#888",
-    textAlign: "center",
-    marginTop: 20,
-  },
-  addButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  backButton: {
-    backgroundColor: "#555",
-    borderRadius: 8,
-    marginTop: 10,
   },
   streak: {
     fontSize: 16,
@@ -91,7 +70,6 @@ export const questDetailStyles = StyleSheet.create({
     fontSize: 14,
     color: "#FF5555",
     textAlign: "center",
-    marginBottom: 10,
     fontWeight: "bold",
   },
   dueDate: {
@@ -99,6 +77,57 @@ export const questDetailStyles = StyleSheet.create({
     color: "#FFD700",
     textAlign: "center",
     marginBottom: 10,
+  },
+  taskList: {
+    marginTop: 10,
+  },
+  taskItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E1E1E",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 10,
+    shadowColor: "#9EFFA9",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  completedTask: {
+    backgroundColor: "#2A2A2A",
+  },
+  taskIcon: {
+    marginRight: 12,
+  },
+  taskText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#F8F8F8",
+  },
+  completedTaskText: {
+    textDecorationLine: "line-through",
+    color: "#888",
+  },
+  emptyText: {
+    color: "#888",
+    textAlign: "center",
+    marginTop: 20,
+    fontStyle: "italic",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 20,
+  },
+  addButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  backButton: {
+    backgroundColor: "#555",
+    borderRadius: 10,
+    paddingVertical: 12,
   },
 });
 

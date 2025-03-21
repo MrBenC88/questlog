@@ -120,53 +120,56 @@ export default function App() {
     <NavigationContainer>
       {session && session.user ? (
         <Tab.Navigator
-          screenOptions={{
+          screenOptions={({ route }) => ({
             headerShown: false,
-            tabBarStyle: { backgroundColor: "#121212" },
-            tabBarActiveTintColor: "#fff",
-          }}
+            tabBarStyle: {
+              backgroundColor: "#0B0B0B",
+              borderTopWidth: 0,
+              height: 50,
+              paddingBottom: 2,
+              paddingTop: 2,
+            },
+            tabBarActiveTintColor: "#9EFFA9",
+            tabBarInactiveTintColor: "#888",
+            tabBarLabelStyle: {
+              fontSize: 12,
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+            },
+            tabBarIcon: ({ focused, color, size }) => {
+              let iconName = "";
+              let iconType = "material-community";
+
+              if (route.name === "Quests") {
+                iconName = "sword-cross"; // ⚔️
+              } else if (route.name === "Explore") {
+                iconName = "map-search"; // 🗺️
+              } else if (route.name === "Profile") {
+                iconName = "account-supervisor-outline"; // 🤠 (or 'account-supervisor' for clean look)
+              }
+
+              return (
+                <Icon
+                  name={iconName}
+                  type={iconType}
+                  color={focused ? "#9EFFA9" : color}
+                  size={focused ? size + 6 : size}
+                  style={{
+                    textShadowColor: focused ? "#9EFFA9" : "transparent",
+                    textShadowRadius: focused ? 8 : 0,
+                    textShadowOffset: { width: 0, height: 0 },
+                  }}
+                />
+              );
+            },
+          })}
         >
-          <Tab.Screen
-            name="Quests"
-            component={QuestStack}
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name="book"
-                  type="font-awesome"
-                  color={color}
-                  size={size}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Explore"
-            component={Explore}
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name="compass"
-                  type="font-awesome"
-                  color={color}
-                  size={size}
-                />
-              ),
-            }}
-          />
+          <Tab.Screen name="Quests" component={QuestStack} />
+          <Tab.Screen name="Explore" component={Explore} />
           <Tab.Screen
             name="Profile"
             children={() => <ProfileStack session={session} />}
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name="user"
-                  type="font-awesome"
-                  color={color}
-                  size={size}
-                />
-              ),
-            }}
           />
         </Tab.Navigator>
       ) : (

@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { Button, Icon } from "@rneui/themed";
@@ -15,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 export default function Explore() {
   const [presets, setPresets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState({}); // Tracks which presets are expanded
 
   useFocusEffect(
     useCallback(() => {
@@ -35,6 +37,10 @@ export default function Explore() {
       setPresets(data);
     }
     setLoading(false);
+  }
+
+  function toggleExpand(presetId) {
+    setExpanded((prev) => ({ ...prev, [presetId]: !prev[presetId] }));
   }
 
   async function handleAddPreset(preset) {
@@ -105,6 +111,29 @@ export default function Explore() {
             <Text style={styles.taskCount}>
               🗡 {item.preset_tasks?.length || 0} Tasks
             </Text>
+
+            {/* Show Details Button */}
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => toggleExpand(item.id)}
+            >
+              <Text style={styles.detailsButtonText}>
+                {expanded[item.id] ? "Hide Details" : "Show Details"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Expandable Task List */}
+            {expanded[item.id] && (
+              <View style={styles.taskList}>
+                {item.preset_tasks.map((task, index) => (
+                  <Text key={index} style={styles.taskItem}>
+                    • {task.name}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {/* Add Button */}
             <Button
               title="ADD"
               buttonStyle={styles.addButton}
@@ -165,6 +194,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#CCCCCC",
     marginBottom: 10,
+  },
+  detailsButton: {
+    backgroundColor: "#333",
+    padding: 6,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 10,
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  taskList: {
+    backgroundColor: "#292929",
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+  },
+  taskItem: {
+    fontSize: 14,
+    color: "#E0E0E0",
+    marginBottom: 4,
   },
   addButton: {
     backgroundColor: "#4CAF50",
