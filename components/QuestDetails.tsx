@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Animated,
   ActivityIndicator,
 } from "react-native";
 import {
@@ -25,6 +24,13 @@ export default function QuestDetails() {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(getSecondsUntilMidnight());
+  const [questMastery, setQuestMastery] = useState({ level: 1, xp: 0 });
+  const [questMeta, setQuestMeta] = useState({
+    streak: 0,
+    failed_at: null,
+    due_date: null,
+    frequency: quest.frequency,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -32,7 +38,6 @@ export default function QuestDetails() {
     }, [])
   );
 
-  // ⏳ Get seconds until midnight
   function getSecondsUntilMidnight() {
     const now = new Date();
     const midnight = new Date();
@@ -40,7 +45,6 @@ export default function QuestDetails() {
     return Math.floor((midnight.getTime() - now.getTime()) / 1000);
   }
 
-  // ⏲ Format seconds into HH:MM:SS
   function formatTime(seconds: number) {
     const h = Math.floor(seconds / 3600)
       .toString()
@@ -52,94 +56,199 @@ export default function QuestDetails() {
     return `${h}:${m}:${s}`;
   }
 
-  // ⏳ Auto-countdown effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          return getSecondsUntilMidnight(); // Reset timer at midnight
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => (prev <= 1 ? getSecondsUntilMidnight() : prev - 1));
     }, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Load tasks from AsyncStorage first, then sync with Supabase
   async function loadTasks() {
     try {
       const cachedTasks = await AsyncStorage.getItem(`tasks-${quest.id}`);
       if (cachedTasks) {
-        setTasks(JSON.parse(cachedTasks));
-        updateProgress(JSON.parse(cachedTasks));
+        const parsed = JSON.parse(cachedTasks);
+        setTasks(parsed);
+        updateProgress(parsed);
       }
+
+      const lastCheck = await AsyncStorage.getItem(
+        `last_check_date-${quest.id}`
+      );
+      const today = new Date().toISOString().split("T")[0];
+
+      if (lastCheck !== today) {
+        await updateQuestStreakIfNeeded();
+        await AsyncStorage.setItem(`last_check_date-${quest.id}`, today);
+      }
+
       fetchTasks();
     } catch (error) {
-      console.error("Failed to load tasks from cache", error);
+      console.error("Cache error", error);
     }
   }
 
   async function fetchTasks() {
-    const { data, error } = await supabase
+    const { data: questData, error: questError } = await supabase
+      .from("quests")
+      .select(
+        "id, name, streak, mastery_lvl, mastery_xp, last_completed_at, failed_at, due_date, frequency"
+      )
+      .eq("id", quest.id)
+      .single();
+
+    if (questError) {
+      console.error("Quest fetch error:", questError);
+      return;
+    }
+
+    const { data: tasksData, error: taskError } = await supabase
       .from("tasks")
       .select("*")
       .eq("quest_id", quest.id)
       .order("created_at", { ascending: false });
 
-    if (error) console.error(error);
-    else {
-      setTasks(data);
-      updateProgress(data);
-      await AsyncStorage.setItem(`tasks-${quest.id}`, JSON.stringify(data));
-      setLoading(false);
+    if (!taskError) {
+      setTasks(tasksData);
+      updateProgress(tasksData);
+      await AsyncStorage.setItem(
+        `tasks-${quest.id}`,
+        JSON.stringify(tasksData)
+      );
     }
+
+    setQuestMastery({
+      level: questData.mastery_lvl || 1,
+      xp: questData.mastery_xp || 0,
+    });
+
+    setQuestMeta({
+      streak: questData.streak || 0,
+      failed_at: questData.failed_at,
+      due_date: questData.due_date,
+      frequency: questData.frequency,
+    });
+
+    setLoading(false);
+  }
+
+  function getNextDueDate(today: string, frequency: string): string {
+    const date = new Date(today);
+    if (frequency === "Daily") date.setDate(date.getDate() + 1);
+    else if (frequency === "Weekly") date.setDate(date.getDate() + 7);
+    else if (frequency.includes("Custom-")) {
+      const days = parseInt(frequency.split("-")[1], 10);
+      date.setDate(date.getDate() + days);
+    }
+    return date.toISOString().split("T")[0];
   }
 
   function updateProgress(taskList) {
-    const completedTasks = taskList.filter((task) => task.completed).length;
-    const totalTasks = taskList.length;
-    setProgress(totalTasks > 0 ? completedTasks / totalTasks : 0);
+    const completed = taskList.filter((t) => t.completed).length;
+    setProgress(taskList.length > 0 ? completed / taskList.length : 0);
+  }
+
+  async function updateQuestStreakIfNeeded() {
+    const today = new Date().toISOString().split("T")[0];
+    const { data, error } = await supabase
+      .from("quests")
+      .select(
+        "streak, last_completed_at, mastery_xp, mastery_lvl, failed_at, frequency, due_date"
+      )
+      .eq("id", quest.id)
+      .single();
+
+    if (error) {
+      console.error("Streak fetch failed", error);
+      return;
+    }
+
+    const lastCompleted = data.last_completed_at?.split("T")[0];
+    const due = data.due_date?.split("T")[0] || today;
+
+    let streak = data.streak;
+    let failed = data.failed_at;
+
+    if (today > due) {
+      if (lastCompleted !== due) {
+        streak = 0;
+        failed = today;
+      } else {
+        streak += 1;
+      }
+    }
+
+    const xpGain = 50;
+    let xp = data.mastery_xp + xpGain;
+    let lvl = data.mastery_lvl;
+    const threshold = lvl * 100;
+    if (xp >= threshold) lvl += 1;
+
+    const nextDue = getNextDueDate(today, data.frequency);
+
+    await supabase
+      .from("quests")
+      .update({
+        streak,
+        failed_at: failed,
+        last_completed_at: today,
+        mastery_xp: xp,
+        mastery_lvl: lvl,
+        due_date: nextDue,
+      })
+      .eq("id", quest.id);
   }
 
   async function toggleTaskCompletion(task) {
-    const updatedCompleted = !task.completed;
+    const updated = !task.completed;
     const { error } = await supabase
       .from("tasks")
-      .update({ completed: updatedCompleted })
+      .update({ completed: updated })
       .eq("id", task.id);
 
-    if (error) {
-      console.error(error);
-    } else {
-      const updatedTasks = tasks.map((t) =>
-        t.id === task.id ? { ...t, completed: updatedCompleted } : t
+    if (!error) {
+      const newTasks = tasks.map((t) =>
+        t.id === task.id ? { ...t, completed: updated } : t
       );
-      setTasks(updatedTasks);
-      updateProgress(updatedTasks);
-      await AsyncStorage.setItem(
-        `tasks-${quest.id}`,
-        JSON.stringify(updatedTasks)
-      );
+      setTasks(newTasks);
+      updateProgress(newTasks);
+      await AsyncStorage.setItem(`tasks-${quest.id}`, JSON.stringify(newTasks));
+
+      const allComplete = newTasks.length && newTasks.every((t) => t.completed);
+      if (allComplete) await updateQuestStreakIfNeeded();
     }
   }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{quest.name}</Text>
-      <Text style={styles.subtitle}>Task List ({quest.frequency})</Text>
+      <Text style={styles.subtitle}>Task List ({questMeta.frequency})</Text>
 
-      {/* ⏳ Countdown Timer */}
       <Text style={styles.timerText}>
         ⏳ Time left today:{" "}
         <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
       </Text>
 
-      {/* Progress Bar */}
       <LinearProgress
         value={progress}
         color="#4CAF50"
         style={styles.progressBar}
       />
+
+      <Text style={styles.failure}>
+        {questMeta.failed_at ? `❌ Last Failed: ${questMeta.failed_at}` : ""}
+      </Text>
+      <Text style={styles.dueDate}>
+        📅 Next Due: {questMeta.due_date || "Not Set"}
+      </Text>
+
+      <Text style={styles.streak}>
+        🔥 Streak: {questMeta.streak} day{questMeta.streak === 1 ? "" : "s"}
+      </Text>
+
+      <Text style={styles.mastery}>
+        🏆 Mastery Level: {questMastery.level} | XP: {questMastery.xp}
+      </Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" />
@@ -156,14 +265,11 @@ export default function QuestDetails() {
         />
       )}
 
-      {/* Add Task Button */}
       <Button
         title="Add Task"
         buttonStyle={styles.addButton}
         onPress={() => navigation.navigate("CreateTask", { questId: quest.id })}
       />
-
-      {/* Back Button */}
       <Button
         title="Back"
         buttonStyle={styles.backButton}
@@ -270,5 +376,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#555",
     borderRadius: 8,
     marginTop: 10,
+  },
+  streak: {
+    fontSize: 16,
+    color: "#FFD700",
+    textAlign: "center",
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  mastery: {
+    fontSize: 16,
+    color: "#FFD700",
+    textAlign: "center",
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  failure: {
+    fontSize: 14,
+    color: "#FF5555",
+    textAlign: "center",
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  dueDate: {
+    fontSize: 14,
+    color: "#FFD700",
+    textAlign: "center",
+    marginBottom: 10,
   },
 });
