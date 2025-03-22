@@ -166,6 +166,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
 
   async function updateQuestStreakIfNeeded() {
     const today = new Date().toISOString().split("T")[0];
+
     const { data, error } = await supabase
       .from("quests")
       .select(
@@ -185,13 +186,29 @@ export default function QuestDetails({ quest }: { quest: any }) {
     let streak = data.streak;
     let failed = data.failed_at;
 
-    if (today > due) {
-      if (lastCompleted !== due) {
-        streak = 0;
-        failed = today;
-      } else {
-        streak += 1;
+    const missed = today > due && lastCompleted !== due;
+
+    if (missed) {
+      streak = 0;
+      failed = today;
+
+      // 🧼 Reset task completion only if user missed the due date
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { error: taskResetError } = await supabase
+        .from("tasks")
+        .update({ completed: false })
+        .eq("quest_id", quest.id)
+        .eq("user_id", user.id);
+
+      if (taskResetError) {
+        console.error("Failed to reset tasks:", taskResetError);
       }
+    } else if (today === due && lastCompleted === due) {
+      // ✅ Quest was completed on time
+      streak += 1;
     }
 
     const xpGain = 50;
@@ -207,7 +224,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
 
     const nextDue = getNextDueDate(today, data.frequency);
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("quests")
       .update({
         streak,
@@ -218,12 +235,15 @@ export default function QuestDetails({ quest }: { quest: any }) {
         due_date: nextDue,
       })
       .eq("id", quest.id);
+
+    if (updateError) {
+      console.error("Failed to update quest streak/meta:", updateError);
+    }
   }
 
   async function handleSubmitQuest() {
     const today = new Date().toISOString().split("T")[0];
     const lastCompleted = questMeta.last_completed_at?.split("T")[0] || "";
-
     const due = questMeta.due_date?.split("T")[0] || today;
 
     const missed = lastCompleted && today > due && lastCompleted !== due;
@@ -297,6 +317,8 @@ export default function QuestDetails({ quest }: { quest: any }) {
         console.error("Failed to update profile XP:", updateProfileError);
       }
     }
+
+    // ❌ Do NOT reset tasks here — let updateQuestStreakIfNeeded handle it after due date
 
     // ✅ 4. Update local UI state
     setQuestMeta((prev) => ({
