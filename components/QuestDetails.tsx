@@ -19,12 +19,21 @@ export default function QuestDetails({ quest }: { quest: any }) {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(getSecondsUntilMidnight());
   const [questMastery, setQuestMastery] = useState({ level: 1, xp: 0 });
-  const [questMeta, setQuestMeta] = useState({
+  const [questMeta, setQuestMeta] = useState<{
+    streak: number;
+    failed_at: string | null;
+    due_date: string | null;
+    frequency: any;
+    last_completed_at: string | null;
+  }>({
     streak: 0,
     failed_at: null,
     due_date: null,
     frequency: quest.frequency,
+    last_completed_at: null,
   });
+
+  const [submittedToday, setSubmittedToday] = useState(false);
 
   useEffect(() => {
     loadTasks();
@@ -83,7 +92,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
   async function fetchTasks() {
     const {
       data: { user },
-    } = await supabase.auth.getUser(); // ✅ Get current user
+    } = await supabase.auth.getUser();
 
     const { data: questData, error: questError } = await supabase
       .from("quests")
@@ -91,7 +100,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
         "id, name, streak, mastery_lvl, mastery_xp, last_completed_at, failed_at, due_date, frequency"
       )
       .eq("id", quest.id)
-      .eq("user_id", user.id) // ✅ Only fetch the current user's quest
+      .eq("user_id", user.id)
       .single();
 
     if (questError) {
@@ -103,7 +112,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
       .from("tasks")
       .select("*")
       .eq("quest_id", quest.id)
-      .eq("user_id", user.id) // ✅ Only fetch tasks for this user
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (!taskError) {
@@ -115,6 +124,10 @@ export default function QuestDetails({ quest }: { quest: any }) {
       );
     }
 
+    const today = new Date().toISOString().split("T")[0];
+    const lastCompleted = questData.last_completed_at?.split("T")[0];
+    setSubmittedToday(lastCompleted === today);
+
     setQuestMastery({
       level: questData.mastery_lvl || 1,
       xp: questData.mastery_xp || 0,
@@ -125,6 +138,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
       failed_at: questData.failed_at,
       due_date: questData.due_date,
       frequency: questData.frequency,
+      last_completed_at: questData.last_completed_at,
     });
 
     setLoading(false);
@@ -206,6 +220,95 @@ export default function QuestDetails({ quest }: { quest: any }) {
       .eq("id", quest.id);
   }
 
+  async function handleSubmitQuest() {
+    const today = new Date().toISOString().split("T")[0];
+    const lastCompleted = questMeta.last_completed_at?.split("T")[0];
+    const due = questMeta.due_date?.split("T")[0] || today;
+
+    const missed = today > due && lastCompleted !== due;
+    let newStreak = missed ? 0 : questMeta.streak + 1;
+
+    const xpGain = 50;
+    let newXP = questMastery.xp + xpGain;
+    let newLevel = questMastery.level;
+    let threshold = getXpThreshold(newLevel);
+
+    while (newXP >= threshold) {
+      newXP -= threshold;
+      newLevel += 1;
+      threshold = getXpThreshold(newLevel);
+    }
+
+    const nextDue = getNextDueDate(today, questMeta.frequency);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // ✅ 1. Update quest-specific XP
+    const { error: questError } = await supabase
+      .from("quests")
+      .update({
+        streak: newStreak,
+        failed_at: missed ? today : null,
+        last_completed_at: today,
+        mastery_xp: newXP,
+        mastery_lvl: newLevel,
+        due_date: nextDue,
+      })
+      .eq("id", quest.id);
+
+    if (questError) {
+      console.error("Submit quest failed", questError);
+      return;
+    }
+
+    // ✅ 2. Fetch current profile XP + level
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("mastery_xp, mastery_lvl")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error("Failed to fetch profile XP:", profileError);
+    } else {
+      let totalXP = (profileData.mastery_xp || 0) + xpGain;
+      let totalLvl = profileData.mastery_lvl || 1;
+      let profileThreshold = getXpThreshold(totalLvl);
+
+      while (totalXP >= profileThreshold) {
+        totalXP -= profileThreshold;
+        totalLvl += 1;
+        profileThreshold = getXpThreshold(totalLvl);
+      }
+
+      // ✅ 3. Update profile XP + level
+      const { error: updateProfileError } = await supabase
+        .from("profiles")
+        .update({
+          mastery_xp: totalXP,
+          mastery_lvl: totalLvl,
+        })
+        .eq("id", user.id);
+
+      if (updateProfileError) {
+        console.error("Failed to update profile XP:", updateProfileError);
+      }
+    }
+
+    // ✅ 4. Update local UI state
+    setQuestMeta((prev) => ({
+      ...prev,
+      streak: newStreak,
+      failed_at: missed ? today : null,
+      last_completed_at: today,
+      due_date: nextDue,
+    }));
+    setQuestMastery({ xp: newXP, level: newLevel });
+    setSubmittedToday(true);
+  }
+
   async function toggleTaskCompletion(task) {
     const updated = !task.completed;
     const { error } = await supabase
@@ -220,12 +323,10 @@ export default function QuestDetails({ quest }: { quest: any }) {
       setTasks(newTasks);
       updateProgress(newTasks);
       await AsyncStorage.setItem(`tasks-${quest.id}`, JSON.stringify(newTasks));
-
-      const allComplete = newTasks.length && newTasks.every((t) => t.completed);
-      if (allComplete) await updateQuestStreakIfNeeded();
     }
   }
 
+  const allTasksComplete = tasks.length > 0 && tasks.every((t) => t.completed);
   const masteryProgress = questMastery.xp / getXpThreshold(questMastery.level);
 
   return (
@@ -264,6 +365,12 @@ export default function QuestDetails({ quest }: { quest: any }) {
         />
       )}
 
+      <Button
+        title="Submit Quest"
+        disabled={!allTasksComplete || submittedToday}
+        buttonStyle={styles.submitButton}
+        onPress={handleSubmitQuest}
+      />
       <Button
         title="Add Task"
         buttonStyle={styles.addButton}

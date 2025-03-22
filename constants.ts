@@ -119,6 +119,15 @@ export const questDetailStyles = StyleSheet.create({
     justifyContent: "space-around",
     marginTop: 20,
   },
+  submitButton: {
+    backgroundColor: "#7C4DFF",
+    borderRadius: 10,
+    paddingVertical: 12,
+    shadowColor: "#A38BFF",
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   addButton: {
     backgroundColor: "#4CAF50",
     borderRadius: 10,
