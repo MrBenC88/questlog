@@ -76,9 +76,7 @@ export default function Profile({ session }) {
 
       {/* 🏆 Mastery Progress Bar */}
       <View style={styles.progressWrapper}>
-        <Text style={styles.subText}>
-          🏆 Mastery XP: {profile.xp || 0}
-        </Text>
+        <Text style={styles.subText}>🏆 Mastery XP: {profile.xp || 0}</Text>
         <LinearProgress
           value={getProgress(profile.xp, profile.mastery_lvl)}
           color="#FFC107"
@@ -87,9 +85,9 @@ export default function Profile({ session }) {
       </View>
 
       {/* 🔥 Streak */}
-      <Text style={styles.streakText}>
+      {/* <Text style={styles.streakText}>
         🔥 Streak: {profile.streak || 0} days
-      </Text>
+      </Text> */}
 
       {/* 📜 Edit Profile Button */}
       <Button
