@@ -47,8 +47,8 @@ export default function Profile({ session }) {
     );
   }
 
-  const currentLevel = profile.mastery_lvl || 1;
-  const currentXP = profile.mastery_xp || 0;
+  const currentLevel = profile.level || 1;
+  const currentXP = profile.xp || 0;
   const xpToNextLevel = calculateXPToNextLevel(currentLevel);
   const xpProgress = getProgress(currentXP, currentLevel);
 
@@ -77,10 +77,10 @@ export default function Profile({ session }) {
       {/* 🏆 Mastery Progress Bar */}
       <View style={styles.progressWrapper}>
         <Text style={styles.subText}>
-          🏆 Mastery XP: {profile.mastery_xp || 0}
+          🏆 Mastery XP: {profile.xp || 0}
         </Text>
         <LinearProgress
-          value={getProgress(profile.mastery_xp, profile.mastery_lvl)}
+          value={getProgress(profile.xp, profile.mastery_lvl)}
           color="#FFC107"
           style={styles.progressBar}
         />

@@ -222,10 +222,11 @@ export default function QuestDetails({ quest }: { quest: any }) {
 
   async function handleSubmitQuest() {
     const today = new Date().toISOString().split("T")[0];
-    const lastCompleted = questMeta.last_completed_at?.split("T")[0];
+    const lastCompleted = questMeta.last_completed_at?.split("T")[0] || "";
+
     const due = questMeta.due_date?.split("T")[0] || today;
 
-    const missed = today > due && lastCompleted !== due;
+    const missed = lastCompleted && today > due && lastCompleted !== due;
     let newStreak = missed ? 0 : questMeta.streak + 1;
 
     const xpGain = 50;
@@ -266,15 +267,15 @@ export default function QuestDetails({ quest }: { quest: any }) {
     // ✅ 2. Fetch current profile XP + level
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("mastery_xp, mastery_lvl")
+      .select("xp, level")
       .eq("id", user.id)
       .single();
 
     if (profileError) {
       console.error("Failed to fetch profile XP:", profileError);
     } else {
-      let totalXP = (profileData.mastery_xp || 0) + xpGain;
-      let totalLvl = profileData.mastery_lvl || 1;
+      let totalXP = (profileData.xp || 0) + xpGain;
+      let totalLvl = profileData.level || 1;
       let profileThreshold = getXpThreshold(totalLvl);
 
       while (totalXP >= profileThreshold) {
@@ -287,8 +288,8 @@ export default function QuestDetails({ quest }: { quest: any }) {
       const { error: updateProfileError } = await supabase
         .from("profiles")
         .update({
-          mastery_xp: totalXP,
-          mastery_lvl: totalLvl,
+          xp: totalXP,
+          level: totalLvl,
         })
         .eq("id", user.id);
 
@@ -367,7 +368,7 @@ export default function QuestDetails({ quest }: { quest: any }) {
 
       <Button
         title="Submit Quest"
-        disabled={!allTasksComplete || submittedToday}
+        disabled={!allTasksComplete}
         buttonStyle={styles.submitButton}
         onPress={handleSubmitQuest}
       />
